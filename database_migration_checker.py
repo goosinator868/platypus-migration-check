@@ -1,29 +1,66 @@
 import docker
-from docker import APIClient
 import psycopg2
 import time
+from macropy.case_classes import macros, enum
 
 # Test if containers are already running or not
 # Handle running containers gracefully by clean starts
+'''
+class MigrationError(Exception):
+    def __init__(self, code):
+        self.code = code
 
-def main():
-    # Initialize Docker
-    client = docker.from_env()
-    api_client = docker.APIClient()
+class DockerError(migrationError):
+    @enum
+    class DockerErrorCode:
+        InitFailure
+    
+    errorMessages = {initFailure: "Docker initialization failure."}
+'''
+class InitError(Exception):
+    pass
+
+class PSQLConnectionError(Exception):
+    pass
+
+# Returns db containers
+def start_docker_containers(old_db_port_no, new_db_port_no):
+    print("Initializing docker environment.")
+    try:
+        env_client = docker.from_env()
+    except Exception:
+        print("Docker initialization failed.")
+        raise InitError
 
     # Start containers
-    old_db = client.containers.create(image="guaranteedrate/homework-pre-migration:1607545060-a7085621", publish_all_ports=True, ports={5432:5432})
-    new_db = client.containers.create(image="guaranteedrate/homework-post-migration:1607545060-a7085621", publish_all_ports=True, ports={5432:5433})
-    old_db.start()
-    #time.sleep(10)
-    new_db.start()
+    print("Creating container for old database.")
+    try:
+        old_db = env_client.containers.create(image="guaranteedrate/homework-pre-migration:1607545060-a7085621", publish_all_ports=True, ports={5432:old_db_port_no})
+        old_db.start()
+    except Exception:
+        print("Old database setup failed.")
+        old_db.stop()
+        env_client.containers.prune()
+        raise InitError
+    print("Old database container running successfully on port " + str(old_db_port_no) + ".")
 
-    old_db_metadata = api_client.inspect_container(old_db.id)
-    print(old_db_metadata["NetworkSettings"]["IPAddress"])
+    print("Creating container for new database.")
+    try:
+        new_db = env_client.containers.create(image="guaranteedrate/homework-post-migration:1607545060-a7085621", publish_all_ports=True, ports={5432:new_db_port_no})
+        new_db.start()
+    except Exception:
+        old_db.stop()
+        new_db.stop()
+        env_client.containers.prune()
+        print("New database setup failed.")
+        raise InitError
+    print("New database container running successfully on port " + str(new_db_port_no) + ".\n")
 
-    # Show containers
-    print(client.containers.list())
-    
+    return env_client, old_db, new_db
+
+# Returns connection and cursor
+def connect_db(db, usr, pswd, prt_no):
+    print("Connecting to", db, "database.")
     # Connect to PSQL server
     retry = 1
     connection = None
@@ -32,73 +69,75 @@ def main():
             print("Connecting to server | attempt ", retry)
             connection = psycopg2.connect(
                     host="localhost",
-                    database="old",
-                    user="old",
-                    password="hehehe",
-                    port=5432
+                    database=db,
+                    user=usr,
+                    password=pswd,
+                    port=prt_no
                 )
 
-            print("Connection created")
+            print("Connection created successfully.")
 
             # create a cursor
-            cur = connection.cursor()
+            cursor = connection.cursor()
 
             # execute a statement
-            print('PostgreSQL database version:')
-            cur.execute('SELECT * FROM accounts')
+            #cursor.execute('SELECT id FROM accounts ORDER BY id')
             
             # display the PostgreSQL database server version
-            db_version = cur.fetchone()
-            db_version = cur.fetchone()
-            print(db_version)
+            #db_version = cursor.fetchmany(10)
+            #print(db_version)
             break
 
         except psycopg2.DatabaseError as err:
             time.sleep(1)
             retry += 1
-    connection.close()
-    print("Connection closed")
     
-    # Connect to PSQL server
-    retry = 1
-    connection = None
-    while retry <= 30:
-        try:
-            print("Connecting to server | attempt ", retry)
-            connection = psycopg2.connect(
-                    host="localhost",
-                    database="new",
-                    user="new",
-                    password="hahaha",
-                    port=5433
-                )
+    if retry > 30:
+        print("Failed to connect to psql server.")
+        raise PSQLConnectionError
 
-            print("Connection created")
+    print("Successfully connected to " + db + " database on port " + str(prt_no) + ".\n")
+    return connection, cursor
 
-            # create a cursor
-            cur = connection.cursor()
+# Main function
+def main():
+    print("-----------------------------------------")
+    print("-- Starting Database Migration Checker --")
+    print("-----------------------------------------\n")
+    try:
+        old_db_port_no = 5432
+        new_db_port_no = 5433
+        env_client, old_db_container, new_db_container = start_docker_containers(old_db_port_no, new_db_port_no)
 
-            # execute a statement
-            print('PostgreSQL database version:')
-            cur.execute('SELECT * FROM accounts')
-            
-            # display the PostgreSQL database server version
-            db_version = cur.fetchone()
-            print(db_version)
-            break
+        # Connect to PSQL server
+        old_db_connection, old_db_cursor = connect_db(db="old", usr="old", pswd="hehehe", prt_no=old_db_port_no)
+        new_db_connection, new_db_cursor = connect_db(db="new", usr="new", pswd="hahaha", prt_no=new_db_port_no)
 
-        except psycopg2.DatabaseError as err:
-            time.sleep(1)
-            retry += 1
-    connection.close()
-    print("Connection closed")
+        old_db_connection.close()
+        print("old_db connection closed.")
+        new_db_connection.close()
+        print("new_db connection closed.")
 
-    # Stop containers
-    old_db.stop()
-    new_db.stop()
-    client.containers.prune()
-
-    pass
+        # Docker cleanup
+        old_db_container.stop()
+        new_db_container.stop()
+        env_client.containers.prune()
+    except InitError:
+        print("Exiting.")
+        return
+    except PSQLConnectionError:
+        old_db_container.stop()
+        new_db_container.stop()
+        env_client.containers.prune()
+        return
+    except Exception:
+        old_db_container.stop()
+        new_db_container.stop()
+        env_client.containers.prune()
+        print("Exiting.")
+        return
+    
+    print("Report generation successful.")
 
 if __name__ == "__main__":
     main()
