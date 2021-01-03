@@ -1,7 +1,7 @@
 import docker
 import psycopg2
 import time
-from macropy.case_classes import macros, enum
+import csv
 
 # Test if containers are already running or not
 # Handle running containers gracefully by clean starts
@@ -93,14 +93,35 @@ def connect_db(db, usr, pswd, prt_no):
     return connection, cursor
 
 # Returns 
-def find_new_entries():
+def find_new_entries(old_db_cursor, new_db_cursor):
     # execute a statement
-    # cursor.execute('SELECT id FROM accounts ORDER BY id')
+    print("Finding new entries.")
+    old_db_cursor.execute('SELECT * FROM accounts ORDER BY id ASC')
+    new_db_cursor.execute('SELECT * FROM accounts ORDER BY id ASC')
     
-    # display the PostgreSQL database server version
-    # db_version = cursor.fetchmany(10)
-    # print(db_version)
-    pass
+    old_db_id_list = old_db_cursor.fetchall()
+    time.sleep(1)
+    new_db_id_list = new_db_cursor.fetchall()
+    time.sleep(1)
+    new_entries_list = []
+    offset = 0
+
+    for i in range(len(new_db_id_list)):
+        if i % 5000 == 0:
+            print("Examining entry", i)
+        new_db_id = new_db_id_list[i]
+        for j in range(offset, len(old_db_id_list)):
+            old_db_id = old_db_id_list[j]
+            if new_db_id[0] <= old_db_id[0]:
+                if new_db_id[0] < old_db_id[0]:
+                    new_entries_list.append(new_db_id)
+                offset = j
+                break
+        else:
+            new_entries_list.append(new_db_id)
+
+    print(len(new_entries_list), "new employees found.")
+    return new_entries_list
 
 def log_new_entries():
     pass
@@ -131,6 +152,12 @@ def main():
         old_db_connection, old_db_cursor = connect_db(db="old", usr="old", pswd="hehehe", prt_no=old_db_port_no)
         new_db_connection, new_db_cursor = connect_db(db="new", usr="new", pswd="hahaha", prt_no=new_db_port_no)
 
+        # Create new CSV report
+
+
+        # Generate Report
+        #new_entries = find_new_entries(old_db_cursor, new_db_cursor)
+
         old_db_connection.close()
         print("old_db connection closed.")
         new_db_connection.close()
@@ -141,14 +168,24 @@ def main():
         new_db_container.stop()
         env_client.containers.prune()
     except InitError:
+        print("!!!!!!!!!!!!!!!!!!!!!!!!")
+        print("!!FATAL ERROR OCCURRED!!")
+        print("!!!!!!!!!!!!!!!!!!!!!!!!")
+        print("Check if the ports " + str(old_db_port_no) + " and " + str(new_db_port_no) + " are currently in use.")
         print("Exiting.")
         return
     except PSQLConnectionError:
+        print("!!!!!!!!!!!!!!!!!!!!!!!!")
+        print("!!FATAL ERROR OCCURRED!!")
+        print("!!!!!!!!!!!!!!!!!!!!!!!!")
         old_db_container.stop()
         new_db_container.stop()
         env_client.containers.prune()
         return
     except Exception:
+        print("!!!!!!!!!!!!!!!!!!!!!!!!")
+        print("!!FATAL ERROR OCCURRED!!")
+        print("!!!!!!!!!!!!!!!!!!!!!!!!")
         old_db_container.stop()
         new_db_container.stop()
         env_client.containers.prune()
