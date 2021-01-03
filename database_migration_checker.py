@@ -45,9 +45,10 @@ def main():
 
             # execute a statement
             print('PostgreSQL database version:')
-            cur.execute('SELECT version()')
+            cur.execute('SELECT * FROM accounts')
             
             # display the PostgreSQL database server version
+            db_version = cur.fetchone()
             db_version = cur.fetchone()
             print(db_version)
             break
@@ -79,7 +80,7 @@ def main():
 
             # execute a statement
             print('PostgreSQL database version:')
-            cur.execute('SELECT version()')
+            cur.execute('SELECT * FROM accounts')
             
             # display the PostgreSQL database server version
             db_version = cur.fetchone()
