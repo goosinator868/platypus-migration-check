@@ -8,7 +8,7 @@ def main():
     client = docker.from_env()
 
     # Start containers
-    old_db = client.containers.create(image="guaranteedrate/homework-pre-migration:1607545060-a7085621", publish_all_ports=True)
+    old_db = client.containers.create(image="guaranteedrate/homework-pre-migration:1607545060-a7085621", publish_all_ports=True, ports={5432:5432})
     old_db.start()
 
     # Show containers
