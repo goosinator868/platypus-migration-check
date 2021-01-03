@@ -79,13 +79,6 @@ def connect_db(db, usr, pswd, prt_no):
 
             # create a cursor
             cursor = connection.cursor()
-
-            # execute a statement
-            #cursor.execute('SELECT id FROM accounts ORDER BY id')
-            
-            # display the PostgreSQL database server version
-            #db_version = cursor.fetchmany(10)
-            #print(db_version)
             break
 
         except psycopg2.DatabaseError as err:
@@ -98,6 +91,31 @@ def connect_db(db, usr, pswd, prt_no):
 
     print("Successfully connected to " + db + " database on port " + str(prt_no) + ".\n")
     return connection, cursor
+
+# Returns 
+def find_new_entries():
+    # execute a statement
+    # cursor.execute('SELECT id FROM accounts ORDER BY id')
+    
+    # display the PostgreSQL database server version
+    # db_version = cursor.fetchmany(10)
+    # print(db_version)
+    pass
+
+def log_new_entries():
+    pass
+
+def find_missing_entries():
+    pass
+
+def log_missing_entries():
+    pass
+
+def find_corrupted_entries():
+    pass
+
+def log_missing_entries():
+    pass
 
 # Main function
 def main():
