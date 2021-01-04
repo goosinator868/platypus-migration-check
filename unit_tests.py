@@ -4,6 +4,7 @@ import psycopg2
 import time
 import csv
 import database_migration_checker
+import database_samples
 
 class TestStartDockerContainers(unittest.TestCase):
     def test_basic_environment(self):
@@ -75,6 +76,7 @@ class TestConnectDB(unittest.TestCase):
         except:
             self.fail("Connection to db failed unexpectedly!")
 
+    @unittest.skip("takes a long time")
     def test_cleanup_on_bad_data(self):
         # Confirm proper error is thrown upon failure
         # WARNING: This one takes a while
@@ -106,14 +108,147 @@ class TestConnectDB(unittest.TestCase):
         self.assertIsNone(old_db_connection)
         self.assertIsNone(old_db_cursor)
 
+class TestSortAndSelectEntries(unittest.TestCase):
+    def test_basic_environment(self):
+        pass
+    
+    def test_cleanup_on_bad_data(self):
+        pass
+
 class TestFindNewEntries(unittest.TestCase):
-    pass
+    def test_basic_environment(self):
+        try:
+            # Test individual successes and failures
+            same_data = database_migration_checker.find_new_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0)
+            print(same_data)
+            self.assertListEqual(same_data, [])
+
+            # Test id above and below actual value
+            diff_id = database_migration_checker.find_new_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_id_0)
+            self.assertListEqual(diff_id, database_samples.new_database_entry_0_diff_id_0)
+            diff_id = None
+            diff_id = database_migration_checker.find_new_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_id_1)
+            self.assertListEqual(diff_id, database_samples.new_database_entry_0_diff_id_1)
+
+            # Test name above and below actual value
+            diff_name = database_migration_checker.find_new_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_name_0)
+            self.assertListEqual(diff_name, [])
+            diff_name = None
+            diff_name = database_migration_checker.find_new_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_name_1)
+            self.assertListEqual(diff_name, [])
+            diff_name = None
+            diff_name = database_migration_checker.find_new_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_name_2)
+            self.assertListEqual(diff_name, [])
+
+            # Test email above and below actual value
+            diff_email = database_migration_checker.find_new_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_email_0)
+            self.assertListEqual(diff_email, [])
+            diff_email = None
+            diff_email = database_migration_checker.find_new_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_email_1)
+            self.assertListEqual(diff_email, [])
+            diff_email = None
+            diff_email = database_migration_checker.find_new_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_email_2)
+            self.assertListEqual(diff_email, [])
+
+            # Test larger scale results
+            new_entries = database_migration_checker.find_new_entries(database_samples.old_database_sample, database_samples.new_database_sample)
+            self.assertListEqual(new_entries, database_samples.new_entries_sol)
+
+        except:
+            self.fail("Unexpected failure looking for new entries!")
+    
+    def test_cleanup_on_bad_data(self):
+        pass
 
 class TestFindMissingEntries(unittest.TestCase):
-    pass
+    def test_basic_environment(self):
+        try:
+            # Test individual successes and failures
+            same_data = database_migration_checker.find_missing_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0)
+            print(same_data)
+            self.assertListEqual(same_data, [])
 
-class TestFindCorruptEntries(unittest.TestCase):
-    pass
+            # Test id above and below actual value
+            diff_id = database_migration_checker.find_missing_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_id_0)
+            self.assertListEqual(diff_id, database_samples.old_database_entry_0)
+            diff_id = None
+            diff_id = database_migration_checker.find_missing_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_id_1)
+            self.assertListEqual(diff_id, database_samples.old_database_entry_0)
+
+            # Test name above and below actual value
+            diff_name = database_migration_checker.find_missing_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_name_0)
+            self.assertListEqual(diff_name, [])
+            diff_name = None
+            diff_name = database_migration_checker.find_missing_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_name_1)
+            self.assertListEqual(diff_name, [])
+            diff_name = None
+            diff_name = database_migration_checker.find_missing_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_name_2)
+            self.assertListEqual(diff_name, [])
+
+            # Test email above and below actual value
+            diff_email = database_migration_checker.find_missing_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_email_0)
+            self.assertListEqual(diff_email, [])
+            diff_email = None
+            diff_email = database_migration_checker.find_missing_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_email_1)
+            self.assertListEqual(diff_email, [])
+            diff_email = None
+            diff_email = database_migration_checker.find_missing_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_email_2)
+            self.assertListEqual(diff_email, [])
+
+            # Test larger scale results
+            new_entries = database_migration_checker.find_missing_entries(database_samples.old_database_sample, database_samples.new_database_sample)
+            self.assertListEqual(new_entries, database_samples.missing_entries_sol)
+
+        except:
+            self.fail("Unexpected failure looking for new entries!")
+    
+    def test_cleanup_on_bad_data(self):
+        pass
+
+class TestFindCorruptedEntries(unittest.TestCase):
+    def test_basic_environment(self):
+        try:
+            # Test individual successes and failures
+            same_data = database_migration_checker.find_corrupted_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0)
+            print(same_data)
+            self.assertListEqual(same_data, [])
+
+            # Test id above and below actual value
+            diff_id = database_migration_checker.find_corrupted_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_id_0)
+            self.assertListEqual(diff_id, [])
+            diff_id = None
+            diff_id = database_migration_checker.find_corrupted_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_id_1)
+            self.assertListEqual(diff_id, [])
+
+            # Test name above and below actual value
+            diff_name = database_migration_checker.find_corrupted_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_name_0)
+            self.assertListEqual(diff_name, [database_samples.old_database_entry_0[0] + database_samples.new_database_entry_0_diff_name_0[0]])
+            diff_name = None
+            diff_name = database_migration_checker.find_corrupted_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_name_1)
+            self.assertListEqual(diff_name, [database_samples.old_database_entry_0[0] + database_samples.new_database_entry_0_diff_name_1[0]])
+            diff_name = None
+            diff_name = database_migration_checker.find_corrupted_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_name_2)
+            self.assertListEqual(diff_name, [database_samples.old_database_entry_0[0] + database_samples.new_database_entry_0_diff_name_2[0]])
+
+            # Test email above and below actual value
+            diff_email = database_migration_checker.find_corrupted_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_email_0)
+            self.assertListEqual(diff_email, [database_samples.old_database_entry_0[0] + database_samples.new_database_entry_0_diff_email_0[0]])
+            diff_email = None
+            diff_email = database_migration_checker.find_corrupted_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_email_1)
+            self.assertListEqual(diff_email, [database_samples.old_database_entry_0[0] + database_samples.new_database_entry_0_diff_email_1[0]])
+            diff_email = None
+            diff_email = database_migration_checker.find_corrupted_entries(database_samples.old_database_entry_0, database_samples.new_database_entry_0_diff_email_2)
+            self.assertListEqual(diff_email, [database_samples.old_database_entry_0[0] + database_samples.new_database_entry_0_diff_email_2[0]])
+
+            # Test larger scale results
+            new_entries = database_migration_checker.find_corrupted_entries(database_samples.old_database_sample, database_samples.new_database_sample)
+            self.assertListEqual(new_entries, database_samples.corrupted_entries_sol)
+
+        except:
+            self.fail("Unexpected failure looking for new entries!")
+    
+    def test_cleanup_on_bad_data(self):
+        pass
 
 if __name__ == "__main__":
     unittest.main()

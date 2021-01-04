@@ -56,7 +56,7 @@ def connect_db(db, usr, pswd, prt_no):
     # Connect to PSQL server
     retry = 1
     connection = None
-    while retry <= 30:
+    while retry <= 15:
         try:
             print("Connecting to server | attempt ", retry)
             connection = psycopg2.connect(
