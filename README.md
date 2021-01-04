@@ -2,7 +2,7 @@
 ## Introduction
 Hi there! Thank you for taking the time to review my code submission.\
 This code is supposed to create a report of the discrepancies between the two given databases.\
-Make sure that you have the requirements installed before running the code.\
+Make sure that you have the requirements installed before running the code.
 
 ## Requirements
 [Python 2.7](https://www.python.org/download/releases/2.7/)\
