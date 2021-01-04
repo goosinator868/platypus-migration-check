@@ -7,7 +7,7 @@ Make sure that you have the requirements installed before running the code.\
 ## Requirements
 [Python 2.7](https://www.python.org/download/releases/2.7/)\
 [Docker](https://www.docker.com/products/docker-desktop)\
-[psycopg2](https://pypi.org/project/psycopg2/#files)\
+[psycopg2](https://pypi.org/project/psycopg2/#files)
 
 ## Instructions
 1. Download repos to computer.
