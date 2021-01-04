@@ -96,8 +96,8 @@ def connect_db(db, usr, pswd, prt_no):
 def find_new_entries(old_db_cursor, new_db_cursor):
     # execute a statement
     print("Finding new entries.")
-    old_db_cursor.execute('SELECT * FROM accounts ORDER BY id ASC')
-    new_db_cursor.execute('SELECT * FROM accounts ORDER BY id ASC')
+    old_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
+    new_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
     
     old_db_id_list = old_db_cursor.fetchall()
     time.sleep(1)
@@ -112,31 +112,24 @@ def find_new_entries(old_db_cursor, new_db_cursor):
         new_db_id = new_db_id_list[i]
         for j in range(offset, len(old_db_id_list)):
             old_db_id = old_db_id_list[j]
-            if new_db_id[0] <= old_db_id[0]:
-                if new_db_id[0] < old_db_id[0]:
+            if new_db_id[1] <= old_db_id[1]:
+                if new_db_id[1] < old_db_id[1]:
                     new_entries_list.append(new_db_id)
                 offset = j
                 break
         else:
             new_entries_list.append(new_db_id)
 
-    print(len(new_entries_list), "new employees found.")
+    print(len(new_entries_list), "new employees found.\n")
     return new_entries_list
 
-def log_new_entries():
-    pass
+def find_missing_entries(old_db_cursor, new_db_cursor):
+    print("Finding missing entries.")
+    return []
 
-def find_missing_entries():
-    pass
-
-def log_missing_entries():
-    pass
-
-def find_corrupted_entries():
-    pass
-
-def log_missing_entries():
-    pass
+def find_corrupted_entries(old_db_cursor, new_db_cursor):
+    print("Find corrupted entries.")
+    return []
 
 # Main function
 def main():
@@ -152,11 +145,21 @@ def main():
         old_db_connection, old_db_cursor = connect_db(db="old", usr="old", pswd="hehehe", prt_no=old_db_port_no)
         new_db_connection, new_db_cursor = connect_db(db="new", usr="new", pswd="hahaha", prt_no=new_db_port_no)
 
+        # Find entries worth noting
+        new_entries = find_new_entries(old_db_cursor, new_db_cursor)
+        missing_entries = find_missing_entries(old_db_cursor, new_db_cursor)
+        corrupted_entries = find_corrupted_entries(old_db_cursor, new_db_cursor)
+
         # Create new CSV report
-
-
-        # Generate Report
-        #new_entries = find_new_entries(old_db_cursor, new_db_cursor)
+        with open('database_migration_report.csv', "w+", newline="") as csv_file:
+            csv_writer = csv.writer(csv_file)
+            csv_writer.writerow(["Database Migration Report\n"])
+            csv_writer.writerow(["New Entries"])
+            csv_writer.writerow(["Row (New)", "ID", "Name", "Email", "Favorite Flavor"])
+            csv_writer.writerows(new_entries)
+            csv_writer.writerow(["Missing Entries"])
+            csv_writer.writerow(["Row (Old)", "ID", "Name", "Email"])
+            csv_writer.writerows(missing_entries)
 
         old_db_connection.close()
         print("old_db connection closed.")
@@ -182,6 +185,7 @@ def main():
         new_db_container.stop()
         env_client.containers.prune()
         return
+    '''
     except Exception:
         print("!!!!!!!!!!!!!!!!!!!!!!!!")
         print("!!FATAL ERROR OCCURRED!!")
@@ -190,7 +194,7 @@ def main():
         new_db_container.stop()
         env_client.containers.prune()
         print("Exiting.")
-        return
+        return'''
     
     print("Report generation successful.")
 
