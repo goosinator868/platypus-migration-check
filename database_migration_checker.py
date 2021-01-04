@@ -3,23 +3,11 @@ import psycopg2
 import time
 import csv
 
-# Test if containers are already running or not
-# Handle running containers gracefully by clean starts
-'''
-class MigrationError(Exception):
-    def __init__(self, code):
-        self.code = code
-
-class DockerError(migrationError):
-    @enum
-    class DockerErrorCode:
-        InitFailure
-    
-    errorMessages = {initFailure: "Docker initialization failure."}
-'''
+# Thrown when initialization fails.
 class InitError(Exception):
     pass
 
+# Thrown when PSQL connection fails.
 class PSQLConnectionError(Exception):
     pass
 
@@ -92,7 +80,7 @@ def connect_db(db, usr, pswd, prt_no):
     print("Successfully connected to " + db + " database on port " + str(prt_no) + ".\n")
     return connection, cursor
 
-# Returns 
+# Returns list of tuples containing new db entries
 def find_new_entries(old_db_cursor, new_db_cursor):
     # execute a statement
     print("Finding new entries.")
@@ -121,6 +109,7 @@ def find_new_entries(old_db_cursor, new_db_cursor):
     print(len(new_entries_list), "new employees found.\n")
     return new_entries_list
 
+# Returns list of tuples containing missing db entries
 def find_missing_entries(old_db_cursor, new_db_cursor):
     print("Finding missing entries.")
     # execute a statement
@@ -149,6 +138,7 @@ def find_missing_entries(old_db_cursor, new_db_cursor):
     print(len(missing_entries_list), "missing employees discovered.\n")
     return missing_entries_list
 
+# Returns list of tuples containing corrupted db entries
 def find_corrupted_entries(old_db_cursor, new_db_cursor):
     print("Finding corrupted entries.")
     # execute a statement
@@ -221,10 +211,6 @@ def main():
         new_db_connection.close()
         print("new_db connection closed.")
 
-        # Docker cleanup
-        old_db_container.stop()
-        new_db_container.stop()
-        env_client.containers.prune()
     except InitError:
         print("!!!!!!!!!!!!!!!!!!!!!!!!")
         print("!!FATAL ERROR OCCURRED!!")
@@ -232,26 +218,19 @@ def main():
         print("Check if the ports " + str(old_db_port_no) + " and " + str(new_db_port_no) + " are currently in use.")
         print("Exiting.")
         return
-    except PSQLConnectionError:
-        print("!!!!!!!!!!!!!!!!!!!!!!!!")
-        print("!!FATAL ERROR OCCURRED!!")
-        print("!!!!!!!!!!!!!!!!!!!!!!!!")
-        old_db_container.stop()
-        new_db_container.stop()
-        env_client.containers.prune()
-        return
-    '''
     except Exception:
         print("!!!!!!!!!!!!!!!!!!!!!!!!")
         print("!!FATAL ERROR OCCURRED!!")
         print("!!!!!!!!!!!!!!!!!!!!!!!!")
-        old_db_container.stop()
-        new_db_container.stop()
-        env_client.containers.prune()
         print("Exiting.")
-        return'''
-    
-    print("Report generation successful.")
+    else:
+         print("Report generation successful.")
+
+    # Docker cleanup
+    old_db_container.stop()
+    new_db_container.stop()
+    env_client.containers.prune()
+   
 
 if __name__ == "__main__":
     main()
