@@ -22,7 +22,7 @@ The old database set being used is only accessed through the Docker image found 
 The old database's Docker image is accessible through port 5432 and can be mapped to the local machine's port 5433.
 The table being examined is named "accounts".
 All old table entries have unique ids (primary key).
-The old table contains only the following columns in the following order:
+The old table contains all and only the following columns in the following order:
 - id
 - name
 - email
@@ -32,7 +32,7 @@ The new database set being used is only accessed through the Docker image found 
 The new database's Docker image is accessible through port 5432 and can be mapped to the local machine's port 5433.
 The table being examined is named "accounts".
 All new table entries have unique ids (primary key).
-The new table contains online the following columns in the following order:
+The new table contains all and only the following columns in the following order:
 - id
 - name
 - email

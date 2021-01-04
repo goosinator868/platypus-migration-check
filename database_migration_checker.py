@@ -15,6 +15,10 @@ class PSQLConnectionError(Exception):
 class ReportError(Exception):
     pass
 
+# Thrown when Database entries are causing issues.
+class EntryError(Exception):
+    pass
+
 # Returns db containers
 def start_docker_containers(old_db_port_no, new_db_port_no):
     print("Initializing docker environment.")
@@ -86,62 +90,74 @@ def connect_db(db, usr, pswd, prt_no):
 
 # Returns list of tuples containing new db entries
 def find_new_entries(old_db_id_list, new_db_id_list):
-    print("Finding new entries.")
-    new_entries_list = []
-    offset = 0
+    try:
+        print("Finding new entries.")
+        new_entries_list = []
+        offset = 0
 
-    for i in range(len(new_db_id_list)):
-        new_db_id = new_db_id_list[i]
-        for j in range(offset, len(old_db_id_list)):
-            old_db_id = old_db_id_list[j]
-            if new_db_id[1] <= old_db_id[1]:
-                if new_db_id[1] < old_db_id[1]:
-                    new_entries_list.append(new_db_id)
-                offset = j
-                break
-        else:
-            new_entries_list.append(new_db_id)
+        for i in range(len(new_db_id_list)):
+            new_db_id = new_db_id_list[i]
+            for j in range(offset, len(old_db_id_list)):
+                old_db_id = old_db_id_list[j]
+                if new_db_id[1] <= old_db_id[1]:
+                    if new_db_id[1] < old_db_id[1]:
+                        new_entries_list.append(new_db_id)
+                    offset = j
+                    break
+            else:
+                new_entries_list.append(new_db_id)
+    except Exception:
+        print("Error in records discovered.")
+        raise EntryError
 
     print(len(new_entries_list), "new employees found.\n")
     return new_entries_list
 
 # Returns list of tuples containing missing db entries
 def find_missing_entries(old_db_id_list, new_db_id_list):
-    print("Finding missing entries.")
-    missing_entries_list = []
-    offset = 0
+    try:
+        print("Finding missing entries.")
+        missing_entries_list = []
+        offset = 0
 
-    for i in range(len(old_db_id_list)):
-        old_db_id = old_db_id_list[i]
-        for j in range(offset, len(new_db_id_list)):
-            new_db_id = new_db_id_list[j]
-            if old_db_id[1] <= new_db_id[1]:
-                if old_db_id[1] < new_db_id[1]:
-                    missing_entries_list.append(old_db_id)
-                offset = j
-                break
-        else:
-            missing_entries_list.append(old_db_id)
+        for i in range(len(old_db_id_list)):
+            old_db_id = old_db_id_list[i]
+            for j in range(offset, len(new_db_id_list)):
+                new_db_id = new_db_id_list[j]
+                if old_db_id[1] <= new_db_id[1]:
+                    if old_db_id[1] < new_db_id[1]:
+                        missing_entries_list.append(old_db_id)
+                    offset = j
+                    break
+            else:
+                missing_entries_list.append(old_db_id)
+    except Exception:
+        print("Error in records discovered.")
+        raise EntryError
 
     print(len(missing_entries_list), "missing employees discovered.\n")
     return missing_entries_list
 
 # Returns list of tuples containing corrupted db entries
 def find_corrupted_entries(old_db_id_list, new_db_id_list):
-    print("Finding corrupted entries.")
-    corrupted_entries_list = []
-    offset = 0
+    try:
+        print("Finding corrupted entries.")
+        corrupted_entries_list = []
+        offset = 0
 
-    for i in range(len(new_db_id_list)):
-        new_db_id = new_db_id_list[i]
-        for j in range(offset, len(old_db_id_list)):
-            old_db_id = old_db_id_list[j]
-            if new_db_id[1] <= old_db_id[1]:
-                if new_db_id[1] == old_db_id[1] and (new_db_id[2] != old_db_id[2] or new_db_id[3] != old_db_id[3]):
-                    corrupted_entries_list.append(old_db_id + new_db_id)
-                offset = j
-                break
+        for i in range(len(new_db_id_list)):
+            new_db_id = new_db_id_list[i]
+            for j in range(offset, len(old_db_id_list)):
+                old_db_id = old_db_id_list[j]
+                if new_db_id[1] <= old_db_id[1]:
+                    if new_db_id[1] == old_db_id[1] and (new_db_id[2] != old_db_id[2] or new_db_id[3] != old_db_id[3]):
+                        corrupted_entries_list.append(old_db_id + new_db_id)
+                    offset = j
+                    break
 
+    except Exception:
+        print("Error in records discovered.")
+        raise EntryError
     print(len(corrupted_entries_list), "Corrupted entries found.\n")
     return corrupted_entries_list
 

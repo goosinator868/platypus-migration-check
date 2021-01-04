@@ -158,7 +158,20 @@ class TestFindNewEntries(unittest.TestCase):
             self.fail("Unexpected failure looking for new entries!")
     
     def test_cleanup_on_bad_data(self):
-        pass
+        try:
+            self.assertRaises(database_migration_checker.EntryError, database_migration_checker.find_new_entries(database_samples.old_database_sample, 0))
+        except database_migration_checker.EntryError:
+            pass
+        except:
+            self.fail("Unexpected failure looking for new entries!")
+        
+        try:
+            self.assertRaises(database_migration_checker.EntryError, database_migration_checker.find_new_entries(0, database_samples.new_database_sample))
+        except database_migration_checker.EntryError:
+            pass
+        except:
+            self.fail("Unexpected failure looking for new entries!")
+        # Assumed tables are given with the same number of columns with the same naming conventions in that order. See README for more info on assumed guidelines.
 
 class TestFindMissingEntries(unittest.TestCase):
     def test_basic_environment(self):
@@ -203,7 +216,20 @@ class TestFindMissingEntries(unittest.TestCase):
             self.fail("Unexpected failure looking for new entries!")
     
     def test_cleanup_on_bad_data(self):
-        pass
+        try:
+            self.assertRaises(database_migration_checker.EntryError, database_migration_checker.find_missing_entries(database_samples.old_database_sample, 0))
+        except database_migration_checker.EntryError:
+            pass
+        except:
+            self.fail("Unexpected failure looking for missing entries!")
+        
+        try:
+            self.assertRaises(database_migration_checker.EntryError, database_migration_checker.find_missing_entries(0, database_samples.new_database_sample))
+        except database_migration_checker.EntryError:
+            pass
+        except:
+            self.fail("Unexpected failure looking for missing entries!")
+        # Assumed tables are given with the same number of columns with the same naming conventions in that order. See README for more info on assumed guidelines.
 
 class TestFindCorruptedEntries(unittest.TestCase):
     def test_basic_environment(self):
@@ -248,7 +274,23 @@ class TestFindCorruptedEntries(unittest.TestCase):
             self.fail("Unexpected failure looking for new entries!")
     
     def test_cleanup_on_bad_data(self):
-        pass
+        try:
+            self.assertRaises(database_migration_checker.EntryError, database_migration_checker.find_corrupted_entries(database_samples.old_database_sample, 0))
+        except database_migration_checker.EntryError:
+            pass
+        except:
+            self.fail("Unexpected failure looking for corrupted entries!")
+
+        try:
+            self.assertRaises(database_migration_checker.EntryError, database_migration_checker.find_corrupted_entries(0, database_samples.new_database_sample))
+        except database_migration_checker.EntryError:
+            pass
+        except:
+            self.fail("Unexpected failure looking for corrupted entries!")
+        # Assumed tables are given with the same number of columns with the same naming conventions in that order. See README for more info on assumed guidelines.
+
+class TestWriteReport(unittest):
+    pass
 
 if __name__ == "__main__":
     unittest.main()
