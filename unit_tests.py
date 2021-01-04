@@ -110,10 +110,64 @@ class TestConnectDB(unittest.TestCase):
 
 class TestSortAndSelectEntries(unittest.TestCase):
     def test_basic_environment(self):
-        pass
+        # Unfortunately, this cannot be extensively tested for correctness without another database. Manually compared changes using DBeaver.
+        # Check for lack of failure when connecting
+        try:
+            old_db_port_no = 5432
+            new_db_port_no = 5433
+            env_client, old_db_container, new_db_container = database_migration_checker.start_docker_containers(old_db_port_no, new_db_port_no)
+
+            # Connect to PSQL server
+            old_db_connection, old_db_cursor = database_migration_checker.connect_db(db="old", usr="old", pswd="hehehe", prt_no=old_db_port_no)
+            new_db_connection, new_db_cursor = database_migration_checker.connect_db(db="new", usr="new", pswd="hahaha", prt_no=new_db_port_no)
+
+            old_db_id_list, new_db_id_list = database_migration_checker.sort_and_select_entries(old_db_cursor, new_db_cursor)
+
+        except:
+            self.fail("Something failed unexpectedly when testing for sort_and_select_entries().")
+        
+        if old_db_connection != None:
+            old_db_connection.close()
+        if new_db_connection != None:
+            new_db_connection.close()
+        if old_db_container != None:
+            old_db_container.stop()
+        if new_db_container != None:
+            new_db_container.stop()
+        env_client.containers.prune()
     
     def test_cleanup_on_bad_data(self):
-        pass
+        try:
+            old_db_port_no = 5432
+            new_db_port_no = 5433
+            env_client, old_db_container, new_db_container = database_migration_checker.start_docker_containers(old_db_port_no, new_db_port_no)
+
+            # Connect to PSQL server
+            old_db_connection, old_db_cursor = database_migration_checker.connect_db(db="old", usr="old", pswd="hehehe", prt_no=old_db_port_no)
+            new_db_connection, new_db_cursor = database_migration_checker.connect_db(db="new", usr="new", pswd="hahaha", prt_no=new_db_port_no)
+
+            self.assertRaises(database_migration_checker.SortError, database_migration_checker.sort_and_select_entries(0, new_db_cursor))
+        except database_migration_checker.SortError:
+            pass
+        except:
+            self.fail("Something failed unexpectedly when testing for sort_and_select_entries().")
+        
+        try:
+            self.assertRaises(database_migration_checker.SortError, database_migration_checker.sort_and_select_entries(old_db_cursor, 0))
+        except database_migration_checker.SortError:
+            pass
+        except:
+            self.fail("Something failed unexpectedly when testing for sort_and_select_entries().")
+        
+        if old_db_connection != None:
+            old_db_connection.close()
+        if new_db_connection != None:
+            new_db_connection.close()
+        if old_db_container != None:
+            old_db_container.stop()
+        if new_db_container != None:
+            new_db_container.stop()
+        env_client.containers.prune()
 
 class TestFindNewEntries(unittest.TestCase):
     def test_basic_environment(self):
@@ -289,7 +343,7 @@ class TestFindCorruptedEntries(unittest.TestCase):
             self.fail("Unexpected failure looking for corrupted entries!")
         # Assumed tables are given with the same number of columns with the same naming conventions in that order. See README for more info on assumed guidelines.
 
-class TestWriteReport(unittest):
+class TestWriteReport(unittest.TestCase):
     pass
 
 if __name__ == "__main__":

@@ -19,6 +19,10 @@ class ReportError(Exception):
 class EntryError(Exception):
     pass
 
+# Thrown when Sorting entries fails.
+class SortError(Exception):
+    pass
+
 # Returns db containers
 def start_docker_containers(old_db_port_no, new_db_port_no):
     print("Initializing docker environment.")
@@ -163,15 +167,18 @@ def find_corrupted_entries(old_db_id_list, new_db_id_list):
 
 # Returns list of tuples of entries from dbs sorted by id. Row no included.
 def sort_and_select_entries(old_db_cursor, new_db_cursor):
-    old_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
-    new_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
+    try:
+        old_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
+        new_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
 
-    old_db_id_list = old_db_cursor.fetchall()
-    time.sleep(1)
-    new_db_id_list = new_db_cursor.fetchall()
-    time.sleep(1)
+        old_db_id_list = old_db_cursor.fetchall()
+        time.sleep(1)
+        new_db_id_list = new_db_cursor.fetchall()
+        time.sleep(1)
 
-    return old_db_id_list, new_db_id_list
+        return old_db_id_list, new_db_id_list
+    except Exception:
+        raise SortError
 
 def write_report(new_entries, missing_entries, corrupted_entries):
     # Create new CSV report
@@ -213,28 +220,19 @@ def main():
         new_db_connection, new_db_cursor = connect_db(db="new", usr="new", pswd="hahaha", prt_no=new_db_port_no)
 
         # Find entries worth noting
-        # sort_and_select_entries() is in main to make unit testing easier
         old_db_id_list, new_db_id_list = sort_and_select_entries(old_db_cursor, new_db_cursor)
         new_entries = find_new_entries(old_db_id_list, new_db_id_list)
-        #old_db_id_list, new_db_id_list = sort_and_select_entries(old_db_cursor, new_db_cursor)
         missing_entries = find_missing_entries(old_db_id_list, new_db_id_list)
-        #old_db_id_list, new_db_id_list = sort_and_select_entries(old_db_cursor, new_db_cursor)
         corrupted_entries = find_corrupted_entries(old_db_id_list, new_db_id_list)
 
         write_report(new_entries, missing_entries, corrupted_entries)
-
-        old_db_connection.close()
-        print("old_db connection closed.")
-        new_db_connection.close()
-        print("new_db connection closed.")
-
+    
     except InitError:
         print("!!!!!!!!!!!!!!!!!!!!!!!!")
         print("!!FATAL ERROR OCCURRED!!")
         print("!!!!!!!!!!!!!!!!!!!!!!!!")
         print("Check if the ports " + str(old_db_port_no) + " and " + str(new_db_port_no) + " are currently in use.")
         print("Exiting.")
-        return
     except Exception:
         print("!!!!!!!!!!!!!!!!!!!!!!!!")
         print("!!FATAL ERROR OCCURRED!!")
@@ -243,9 +241,17 @@ def main():
     else:
          print("Report generation successful.")
 
+    if old_db_connection != None:
+        old_db_connection.close()
+        print("old_db connection closed.")
+    if new_db_connection != None:
+        new_db_connection.close()
+        print("new_db connection closed.")
     # Docker cleanup
-    old_db_container.stop()
-    new_db_container.stop()
+    if old_db_container != None:
+        old_db_container.stop()
+    if new_db_container != None:
+        new_db_container.stop()
     env_client.containers.prune()
    
 
