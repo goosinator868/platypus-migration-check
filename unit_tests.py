@@ -76,7 +76,7 @@ class TestConnectDB(unittest.TestCase):
         except:
             self.fail("Connection to db failed unexpectedly!")
 
-    @unittest.skip("takes a long time")
+    #@unittest.skip("tresting")
     def test_cleanup_on_bad_data(self):
         # Confirm proper error is thrown upon failure
         # WARNING: This one takes a while
@@ -88,17 +88,29 @@ class TestConnectDB(unittest.TestCase):
         except database_migration_checker.PSQLConnectionError:
             pass
         except:
+            old_db_container.stop()
+            new_db_container.stop()
+            env_client.containers.prune()
             self.fail("Connection to db failed unexpectedly!")
         else:
+            new_db_container.stop()
+            old_db_container.stop()
+            env_client.containers.prune()
             self.fail("Connection is supposed to fail.")
-        
+
         try:
             old_db_connection, old_db_cursor = database_migration_checker.connect_db(db=5, usr="old", pswd="hehehe", prt_no=5432)
         except database_migration_checker.PSQLConnectionError:
             pass
         except:
+            old_db_container.stop()
+            new_db_container.stop()
+            env_client.containers.prune()
             self.fail("Connection to db failed unexpectedly!")
         else:
+            old_db_container.stop()
+            new_db_container.stop()
+            env_client.containers.prune()
             self.fail("Connection is supposed to fail.")
         
         old_db_container.stop()
@@ -344,7 +356,43 @@ class TestFindCorruptedEntries(unittest.TestCase):
         # Assumed tables are given with the same number of columns with the same naming conventions in that order. See README for more info on assumed guidelines.
 
 class TestWriteReport(unittest.TestCase):
-    pass
+    def test_basic_environment(self):
+        try:
+            database_migration_checker.write_report(database_samples.new_entries_sol, database_samples.missing_entries_sol, database_samples.corrupted_entries_sol)
+            generated_rep = open("database_migration_report.csv", "r")
+            generated_str = generated_rep.read()
+            gold_rep = open("database_sample_report.csv", "r")
+            gold_str = gold_rep.read()
+            self.assertEqual(gold_str, generated_str)
+        except:
+            self.fail("Unexpected failure generating report!")
+    def test_cleanup_on_bad_data(self):
+        try:
+            self.assertRaises(database_migration_checker.ReportError, database_migration_checker.write_report(0, database_samples.missing_entries_sol, database_samples.corrupted_entries_sol))
+        except database_migration_checker.ReportError:
+            pass
+        except:
+            self.fail("Unexpected failure generating report!")
+        else:
+            self.fail("Unexpected success generating report!")
+        
+        try:
+            self.assertRaises(database_migration_checker.ReportError, database_migration_checker.write_report(database_samples.new_entries_sol, 0, database_samples.corrupted_entries_sol))
+        except database_migration_checker.ReportError:
+            pass
+        except:
+            self.fail("Unexpected failure generating report!")
+        else:
+            self.fail("Unexpected success generating report!")
+        
+        try:
+            self.assertRaises(database_migration_checker.ReportError, database_migration_checker.write_report(database_samples.new_entries_sol, database_samples.missing_entries_sol, 0))
+        except database_migration_checker.ReportError:
+            pass
+        except:
+            self.fail("Unexpected failure generating report!")
+        else:
+            self.fail("Unexpected success generating report!")
 
 if __name__ == "__main__":
     unittest.main()

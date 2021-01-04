@@ -1,0 +1,21 @@
+Database Migration Report
+""
+New Entries
+Row (New),ID,Name,Email,Favorite Flavor
+80,003f7cde-77d7-4018-aaf8-67c6384b06e3,Deirdre,Deirdre78927@gmail.com,raspberry
+82,003fd381-ab9b-49c7-81b6-c1338e8c2fbc,Daena,Daena44891@yahoo.com,raspberry
+83,0041be79-ba45-4bd5-9cd7-817051ea212f,Khia,Khia66797@aim.chat,cookie crisp
+89,0049a0eb-b375-41c2-9cc2-aedd5fc4e63a,Claiborne,Claiborne51382@comcast.net,cookie crisp
+99,004efb71-cd90-4731-be82-fbf25ef419ed,Whit,Whit39730@gmail.com,caperberry
+""
+Missing Entries
+Row (Old),ID,Name,Email
+80,003e8369-9007-4d3f-ab1c-1b5b6b2bda0f,Dayvon,Dayvon72367@aim.chat
+81,003ea3e7-efc3-46d3-9fcd-41226a733b41,Amberley,Amberley76252@gmail.com
+82,003f6c3d-b678-4980-b466-48fe373bcf03,Pearson,Pearson16179@hotmail.com
+84,00411ad1-68f1-43d9-888a-d169abc8a1a9,Kemberly,Kemberly12711@hotmail.com
+86,004524fa-f00b-4276-acec-741e74982679,Lord,Lord83361@aim.chat
+""
+Corrupted Entries
+Row (Old),ID,Name,Email,Row (New),ID,Name,Email,Favorite Flavor
+90,00494a3f-4e5d-49d4-aea8-27846687b189,Jennefer,Jennefer106421@comcast.net,88,00494a3f-4e5d-49d4-aea8-27846687b189,Jennefer,Ronald106422@comcast.net,waffle

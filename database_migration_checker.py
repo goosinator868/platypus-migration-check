@@ -85,7 +85,7 @@ def connect_db(db, usr, pswd, prt_no):
             time.sleep(1)
             retry += 1
     
-    if retry > 30:
+    if retry > 15:
         print("Failed to connect to psql server.")
         raise PSQLConnectionError
 
