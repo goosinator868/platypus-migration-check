@@ -125,7 +125,33 @@ def find_new_entries(old_db_cursor, new_db_cursor):
 
 def find_missing_entries(old_db_cursor, new_db_cursor):
     print("Finding missing entries.")
-    return []
+    # execute a statement
+    old_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
+    new_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
+    
+    old_db_id_list = old_db_cursor.fetchall()
+    time.sleep(1)
+    new_db_id_list = new_db_cursor.fetchall()
+    time.sleep(1)
+    missing_entries_list = []
+    offset = 0
+
+    for i in range(len(old_db_id_list)):
+        if i % 5000 == 0:
+            print("Examining entry", i)
+        old_db_id = old_db_id_list[i]
+        for j in range(offset, len(new_db_id_list)):
+            new_db_id = new_db_id_list[j]
+            if old_db_id[1] <= new_db_id[1]:
+                if old_db_id[1] < new_db_id[1]:
+                    missing_entries_list.append(old_db_id)
+                offset = j
+                break
+        else:
+            missing_entries_list.append(old_db_id)
+
+    print(len(missing_entries_list), "missing employees discovered.\n")
+    return missing_entries_list
 
 def find_corrupted_entries(old_db_cursor, new_db_cursor):
     print("Find corrupted entries.")
@@ -160,6 +186,9 @@ def main():
             csv_writer.writerow(["Missing Entries"])
             csv_writer.writerow(["Row (Old)", "ID", "Name", "Email"])
             csv_writer.writerows(missing_entries)
+            csv_writer.writerow(["Corrupted Entries"])
+            csv_writer.writerow(["Row (Old)", "ID", "Name", "Email", "", "Row (New)", "ID", "Name", "Email", "Favorite Flavor"])
+            csv_writer.writerows(corrupted_entries)
 
         old_db_connection.close()
         print("old_db connection closed.")
