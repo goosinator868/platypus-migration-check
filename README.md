@@ -12,7 +12,7 @@ All old table entries have unique ids (primary key).
 The old table contains only the following columns in the following order:
 - id
 - name
-- address
+- email
 
 ### New Database Restrictions
 The new database set being used is only accessed through the Docker image found at guaranteedrate/homework-post-migration:1607545060-a7085621.
@@ -22,5 +22,5 @@ All new table entries have unique ids (primary key).
 The new table contains online the following columns in the following order:
 - id
 - name
-- address
-- flavor
+- email
+- favorite_flavor
