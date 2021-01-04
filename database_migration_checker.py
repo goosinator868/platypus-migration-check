@@ -11,6 +11,10 @@ class InitError(Exception):
 class PSQLConnectionError(Exception):
     pass
 
+# Thrown when Report generating fails.
+class ReportError(Exception):
+    pass
+
 # Returns db containers
 def start_docker_containers(old_db_port_no, new_db_port_no):
     print("Initializing docker environment.")
@@ -168,22 +172,27 @@ def find_corrupted_entries(old_db_cursor, new_db_cursor):
 def write_report(new_entries, missing_entries, corrupted_entries):
     # Create new CSV report
         print("Writing report to database_migration_report.csv.")
-        with open('database_migration_report.csv', "w+", newline="") as csv_file:
-            csv_writer = csv.writer(csv_file)
-            csv_writer.writerow(["Database Migration Report"])
-            csv_writer.writerow([""])
-            csv_writer.writerow(["New Entries"])
-            csv_writer.writerow(["Row (New)", "ID", "Name", "Email", "Favorite Flavor"])
-            csv_writer.writerows(new_entries)
-            csv_writer.writerow([""])
-            csv_writer.writerow(["Missing Entries"])
-            csv_writer.writerow(["Row (Old)", "ID", "Name", "Email"])
-            csv_writer.writerows(missing_entries)
-            csv_writer.writerow([""])
-            csv_writer.writerow(["Corrupted Entries"])
-            csv_writer.writerow(["Row (Old)", "ID", "Name", "Email", "Row (New)", "ID", "Name", "Email", "Favorite Flavor"])
-            csv_writer.writerows(corrupted_entries)
-        print("Report completed.\n")
+        try:
+            with open('database_migration_report.csv', "w+", newline="") as csv_file:
+                csv_writer = csv.writer(csv_file)
+                csv_writer.writerow(["Database Migration Report"])
+                csv_writer.writerow([""])
+                csv_writer.writerow(["New Entries"])
+                csv_writer.writerow(["Row (New)", "ID", "Name", "Email", "Favorite Flavor"])
+                csv_writer.writerows(new_entries)
+                csv_writer.writerow([""])
+                csv_writer.writerow(["Missing Entries"])
+                csv_writer.writerow(["Row (Old)", "ID", "Name", "Email"])
+                csv_writer.writerows(missing_entries)
+                csv_writer.writerow([""])
+                csv_writer.writerow(["Corrupted Entries"])
+                csv_writer.writerow(["Row (Old)", "ID", "Name", "Email", "Row (New)", "ID", "Name", "Email", "Favorite Flavor"])
+                csv_writer.writerows(corrupted_entries)
+            print("Report completed.\n")
+        except Exception:
+            print("Report generation failed. Make sure to close the csv file if it is open on your computer.")
+            raise ReportError
+            
 
 # Main function
 def main():
