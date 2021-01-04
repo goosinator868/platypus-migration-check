@@ -85,16 +85,8 @@ def connect_db(db, usr, pswd, prt_no):
     return connection, cursor
 
 # Returns list of tuples containing new db entries
-def find_new_entries(old_db_cursor, new_db_cursor):
-    # execute a statement
+def find_new_entries(old_db_id_list, new_db_id_list):
     print("Finding new entries.")
-    old_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
-    new_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
-    
-    old_db_id_list = old_db_cursor.fetchall()
-    time.sleep(1)
-    new_db_id_list = new_db_cursor.fetchall()
-    time.sleep(1)
     new_entries_list = []
     offset = 0
 
@@ -114,16 +106,8 @@ def find_new_entries(old_db_cursor, new_db_cursor):
     return new_entries_list
 
 # Returns list of tuples containing missing db entries
-def find_missing_entries(old_db_cursor, new_db_cursor):
+def find_missing_entries(old_db_id_list, new_db_id_list):
     print("Finding missing entries.")
-    # execute a statement
-    old_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
-    new_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
-    
-    old_db_id_list = old_db_cursor.fetchall()
-    time.sleep(1)
-    new_db_id_list = new_db_cursor.fetchall()
-    time.sleep(1)
     missing_entries_list = []
     offset = 0
 
@@ -143,16 +127,8 @@ def find_missing_entries(old_db_cursor, new_db_cursor):
     return missing_entries_list
 
 # Returns list of tuples containing corrupted db entries
-def find_corrupted_entries(old_db_cursor, new_db_cursor):
+def find_corrupted_entries(old_db_id_list, new_db_id_list):
     print("Finding corrupted entries.")
-    # execute a statement
-    old_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
-    new_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
-    
-    old_db_id_list = old_db_cursor.fetchall()
-    time.sleep(1)
-    new_db_id_list = new_db_cursor.fetchall()
-    time.sleep(1)
     corrupted_entries_list = []
     offset = 0
 
@@ -168,6 +144,18 @@ def find_corrupted_entries(old_db_cursor, new_db_cursor):
 
     print(len(corrupted_entries_list), "Corrupted entries found.\n")
     return corrupted_entries_list
+
+# Returns list of tuples of entries from dbs sorted by id. Row no included.
+def sort_and_select_entries(old_db_cursor, new_db_cursor):
+    old_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
+    new_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
+
+    old_db_id_list = old_db_cursor.fetchall()
+    time.sleep(1)
+    new_db_id_list = new_db_cursor.fetchall()
+    time.sleep(1)
+
+    return old_db_id_list, new_db_id_list
 
 def write_report(new_entries, missing_entries, corrupted_entries):
     # Create new CSV report
@@ -209,9 +197,13 @@ def main():
         new_db_connection, new_db_cursor = connect_db(db="new", usr="new", pswd="hahaha", prt_no=new_db_port_no)
 
         # Find entries worth noting
-        new_entries = find_new_entries(old_db_cursor, new_db_cursor)
-        missing_entries = find_missing_entries(old_db_cursor, new_db_cursor)
-        corrupted_entries = find_corrupted_entries(old_db_cursor, new_db_cursor)
+        # sort_and_select_entries() is in main to make unit testing easier
+        old_db_id_list, new_db_id_list = sort_and_select_entries(old_db_cursor, new_db_cursor)
+        new_entries = find_new_entries(old_db_id_list, new_db_id_list)
+        #old_db_id_list, new_db_id_list = sort_and_select_entries(old_db_cursor, new_db_cursor)
+        missing_entries = find_missing_entries(old_db_id_list, new_db_id_list)
+        #old_db_id_list, new_db_id_list = sort_and_select_entries(old_db_cursor, new_db_cursor)
+        corrupted_entries = find_corrupted_entries(old_db_id_list, new_db_id_list)
 
         write_report(new_entries, missing_entries, corrupted_entries)
 
