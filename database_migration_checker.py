@@ -107,8 +107,6 @@ def find_new_entries(old_db_cursor, new_db_cursor):
     offset = 0
 
     for i in range(len(new_db_id_list)):
-        if i % 5000 == 0:
-            print("Examining entry", i)
         new_db_id = new_db_id_list[i]
         for j in range(offset, len(old_db_id_list)):
             old_db_id = old_db_id_list[j]
@@ -137,8 +135,6 @@ def find_missing_entries(old_db_cursor, new_db_cursor):
     offset = 0
 
     for i in range(len(old_db_id_list)):
-        if i % 5000 == 0:
-            print("Examining entry", i)
         old_db_id = old_db_id_list[i]
         for j in range(offset, len(new_db_id_list)):
             new_db_id = new_db_id_list[j]
@@ -154,8 +150,50 @@ def find_missing_entries(old_db_cursor, new_db_cursor):
     return missing_entries_list
 
 def find_corrupted_entries(old_db_cursor, new_db_cursor):
-    print("Find corrupted entries.")
-    return []
+    print("Finding corrupted entries.")
+    # execute a statement
+    old_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
+    new_db_cursor.execute("SELECT row_number() over(), * FROM accounts ORDER BY id ASC")
+    
+    old_db_id_list = old_db_cursor.fetchall()
+    time.sleep(1)
+    new_db_id_list = new_db_cursor.fetchall()
+    time.sleep(1)
+    corrupted_entries_list = []
+    offset = 0
+
+    for i in range(len(new_db_id_list)):
+        new_db_id = new_db_id_list[i]
+        for j in range(offset, len(old_db_id_list)):
+            old_db_id = old_db_id_list[j]
+            if new_db_id[1] <= old_db_id[1]:
+                if new_db_id[1] == old_db_id[1] and (new_db_id[2] != old_db_id[2] or new_db_id[3] != old_db_id[3]):
+                    corrupted_entries_list.append(old_db_id + new_db_id)
+                offset = j
+                break
+
+    print(len(corrupted_entries_list), "Corrupted entries found.\n")
+    return corrupted_entries_list
+
+def write_report(new_entries, missing_entries, corrupted_entries):
+    # Create new CSV report
+        print("Writing report to database_migration_report.csv.")
+        with open('database_migration_report.csv', "w+", newline="") as csv_file:
+            csv_writer = csv.writer(csv_file)
+            csv_writer.writerow(["Database Migration Report"])
+            csv_writer.writerow([""])
+            csv_writer.writerow(["New Entries"])
+            csv_writer.writerow(["Row (New)", "ID", "Name", "Email", "Favorite Flavor"])
+            csv_writer.writerows(new_entries)
+            csv_writer.writerow([""])
+            csv_writer.writerow(["Missing Entries"])
+            csv_writer.writerow(["Row (Old)", "ID", "Name", "Email"])
+            csv_writer.writerows(missing_entries)
+            csv_writer.writerow([""])
+            csv_writer.writerow(["Corrupted Entries"])
+            csv_writer.writerow(["Row (Old)", "ID", "Name", "Email", "Row (New)", "ID", "Name", "Email", "Favorite Flavor"])
+            csv_writer.writerows(corrupted_entries)
+        print("Report completed.\n")
 
 # Main function
 def main():
@@ -176,19 +214,7 @@ def main():
         missing_entries = find_missing_entries(old_db_cursor, new_db_cursor)
         corrupted_entries = find_corrupted_entries(old_db_cursor, new_db_cursor)
 
-        # Create new CSV report
-        with open('database_migration_report.csv', "w+", newline="") as csv_file:
-            csv_writer = csv.writer(csv_file)
-            csv_writer.writerow(["Database Migration Report\n"])
-            csv_writer.writerow(["New Entries"])
-            csv_writer.writerow(["Row (New)", "ID", "Name", "Email", "Favorite Flavor"])
-            csv_writer.writerows(new_entries)
-            csv_writer.writerow(["Missing Entries"])
-            csv_writer.writerow(["Row (Old)", "ID", "Name", "Email"])
-            csv_writer.writerows(missing_entries)
-            csv_writer.writerow(["Corrupted Entries"])
-            csv_writer.writerow(["Row (Old)", "ID", "Name", "Email", "", "Row (New)", "ID", "Name", "Email", "Favorite Flavor"])
-            csv_writer.writerows(corrupted_entries)
+        write_report(new_entries, missing_entries, corrupted_entries)
 
         old_db_connection.close()
         print("old_db connection closed.")
